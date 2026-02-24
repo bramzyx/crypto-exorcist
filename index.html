@@ -1,0 +1,431 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Great Crypto Exorcist 🔮</title>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@400;700;900&family=Uncial+Antiqua&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<style>
+  :root { --blood: #8B0000; --gold: #FFD700; --void: #050510; --purple: #4B0082; --green: #00FF41; }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background: var(--void); color: #e0d4b0; font-family: 'Share Tech Mono', monospace; overflow-x: hidden; cursor: crosshair; }
+  
+  /* Backgrounds & Particles */
+  #particles { position: fixed; inset: 0; pointer-events: none; z-index: 0; overflow: hidden; }
+  .particle { position: absolute; width: 2px; height: 2px; background: var(--gold); border-radius: 50%; animation: float linear infinite; opacity: 0; }
+  @keyframes float { 0% { transform: translateY(100vh) rotate(0deg); opacity: 0; } 10% { opacity: 1; } 90% { opacity: 0.6; } 100% { transform: translateY(-10vh) rotate(720deg); opacity: 0; } }
+  #matrix-canvas { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 0; opacity: 0.05; pointer-events: none; }
+
+  /* Candles */
+  .candle { position: fixed; bottom: 0; display: flex; flex-direction: column; align-items: center; z-index: 1; pointer-events: none; }
+  .candle-body { width: 18px; height: 80px; background: linear-gradient(180deg, #f5e6c8, #d4a853); border-radius: 3px 3px 0 0; position: relative; }
+  .candle-flame { width: 12px; height: 20px; background: radial-gradient(ellipse at bottom, #ff6b35, #ffd700, #fff); border-radius: 50% 50% 20% 20%; animation: flicker 0.15s infinite alternate; margin-bottom: -2px; filter: blur(1px); }
+  .candle-glow { position: absolute; width: 60px; height: 60px; background: radial-gradient(ellipse, rgba(255,200,50,0.3), transparent); top: -30px; left: -24px; animation: flicker 0.15s infinite alternate; }
+  @keyframes flicker { 0% { transform: scaleX(1) scaleY(1); } 100% { transform: scaleX(0.85) scaleY(1.1); } }
+
+  /* Intro Screen */
+  #intro { position: fixed; inset: 0; background: radial-gradient(ellipse at center, #1a0030 0%, #050510 70%); z-index: 1000; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 2rem; }
+  .pentagram { font-size: 6rem; animation: spin 20s linear infinite; filter: drop-shadow(0 0 20px var(--gold)); margin-bottom: 1rem; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .intro-title, .main-title { font-family: 'Cinzel Decorative', serif; font-weight: 900; background: linear-gradient(135deg, #FFD700, #FF6B35, #FFD700); -webkit-background-clip: text; -webkit-text-fill-color: transparent; filter: drop-shadow(0 0 15px rgba(255,215,0,0.5)); }
+  .intro-title { font-size: clamp(2rem, 6vw, 4.5rem); margin-bottom: 0.5rem; }
+  .typing-text { font-size: 1.1rem; color: #d4b896; max-width: 650px; line-height: 1.8; margin-bottom: 2.5rem; min-height: 5em; border-right: 2px solid var(--gold); animation: blink 0.7s step-end infinite; }
+  @keyframes blink { 50% { border-color: transparent; } }
+  .enter-btn, .ritual-btn { font-family: 'Cinzel Decorative', serif; padding: 1rem 3rem; background: linear-gradient(135deg, #8B0000, #4B0082); border: 2px solid var(--gold); color: var(--gold); cursor: pointer; text-transform: uppercase; letter-spacing: 0.2em; transition: 0.3s; box-shadow: 0 0 20px rgba(255,215,0,0.3); font-size: 1.1rem; }
+  .enter-btn:hover, .ritual-btn:hover:not(:disabled) { transform: scale(1.05); box-shadow: 0 0 40px rgba(255,215,0,0.6); }
+
+  /* Main Content */
+  #main { display: none; position: relative; z-index: 2; }
+  header { text-align: center; padding: 4rem 2rem 2rem; background: linear-gradient(180deg, rgba(75,0,130,0.3) 0%, transparent 100%); }
+  .main-title { font-size: clamp(2rem, 5vw, 4rem); margin-bottom: 0.5rem; }
+  .tagline { font-family: 'Uncial Antiqua', serif; color: #9a7a4a; letter-spacing: 0.15em; }
+  section { max-width: 1100px; margin: 0 auto; padding: 3rem 2rem; }
+  .section-title { font-family: 'Cinzel Decorative', serif; font-size: 2rem; color: var(--gold); text-align: center; margin-bottom: 2rem; }
+
+  /* Sins & Confession */
+  .confession-box { background: rgba(139,0,0,0.15); border: 1px solid rgba(255,215,0,0.2); padding: 1.5rem; margin-bottom: 2rem; text-align: center; color: #c8b898; }
+  .sins-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1rem; margin-bottom: 2rem; }
+  .sin-item { display: flex; align-items: center; gap: 0.8rem; padding: 0.8rem; border: 1px solid rgba(255,215,0,0.1); cursor: pointer; background: rgba(255,215,0,0.03); transition: 0.2s; }
+  .sin-item.checked { border-color: var(--blood); background: rgba(139,0,0,0.2); }
+  .sin-box { width: 20px; height: 20px; border: 1px solid var(--gold); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .sin-item.checked .sin-box { background: var(--blood); }
+  .sin-item.checked .sin-box::after { content: '✗'; color: white; }
+
+  /* Paths */
+  .paths-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; margin-bottom: 2rem; }
+  @media (max-width: 700px) { .paths-grid { grid-template-columns: 1fr; } }
+  .path-card { border: 1px solid rgba(255,215,0,0.2); padding: 2rem; text-align: center; cursor: pointer; transition: 0.3s; background: rgba(255,215,0,0.02); }
+  .path-card:hover, .path-card.selected { border-color: var(--gold); box-shadow: 0 0 30px rgba(255,215,0,0.3); transform: translateY(-3px); }
+  .path-icon { font-size: 4rem; margin-bottom: 1rem; display: block; }
+  .path-title { font-family: 'Cinzel Decorative', serif; font-size: 1.2rem; color: var(--gold); }
+  .ritual-btn { display: block; width: 100%; max-width: 400px; margin: 0 auto; }
+  .ritual-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  /* Loading Ritual */
+  #ritual-loading { display: none; text-align: center; padding: 3rem; background: rgba(0,0,0,0.8); border: 1px solid var(--gold); margin-top: 2rem; }
+  .ritual-gif { max-width: 300px; border-radius: 10px; border: 2px solid var(--gold); margin-bottom: 1.5rem; display: none; margin-left: auto; margin-right: auto; }
+  .progress-bar { width: 100%; height: 4px; background: rgba(255,215,0,0.1); margin-bottom: 1rem; }
+  .progress-fill { height: 100%; background: linear-gradient(90deg, var(--blood), var(--gold)); width: 0%; transition: width 0.5s ease; }
+  .loading-step { font-size: 1rem; color: var(--green); min-height: 1.5em; }
+  .healer-scream { display: none; font-size: 1.5rem; font-family: 'Cinzel Decorative', serif; color: #FF6B35; animation: scream 0.2s infinite alternate; padding: 1.5rem; }
+  @keyframes scream { 0% { transform: scale(1) rotate(-1deg); } 100% { transform: scale(1.05) rotate(1deg); } }
+
+  /* Donations & Copy */
+  #donation-section { display: none; }
+  .donate-gif { max-width: 250px; border-radius: 10px; margin: 1rem auto; display: block; }
+  
+  .donation-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; margin-top: 2rem; }
+  @media (max-width: 900px) { .donation-grid { grid-template-columns: repeat(2, 1fr); } }
+  @media (max-width: 600px) { .donation-grid { grid-template-columns: 1fr; } }
+
+  .donation-card { border: 1px solid rgba(255,215,0,0.2); padding: 1.5rem 0.5rem; text-align: center; cursor: pointer; background: rgba(255,215,0,0.03); transition: 0.3s; position: relative; overflow: hidden; }
+  .donation-card:hover { border-color: var(--green); background: rgba(0,255,65,0.05); transform: translateY(-3px); }
+  .donation-addr { font-size: 0.75rem; color: var(--gold); margin-top: 15px; word-break: break-all; padding: 0.8rem 0.2rem; border: 1px dashed rgba(255,215,0,0.3); background: rgba(0,0,0,0.5); transition: 0.3s; }
+  .copy-hint { display: block; margin-top: 8px; font-size: 0.7rem; color: var(--green); font-weight: bold; text-transform: uppercase; }
+  .copy-success { background: var(--green) !important; color: black !important; border-color: var(--green) !important; font-weight: bold; }
+
+  /* Testimonials */
+  .sep { border: none; height: 1px; background: linear-gradient(90deg, transparent, rgba(255,215,0,0.2), transparent); margin: 3rem 0; }
+  .testimonials-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1.5rem; }
+  .testimonial { border: 1px solid rgba(255,215,0,0.15); padding: 1.5rem; background: rgba(255,215,0,0.02); position: relative; display: flex; flex-direction: column; justify-content: space-between; }
+  .testimonial::before { content: '"'; position: absolute; top: -0.3em; left: 0.5em; font-size: 4rem; color: rgba(255,215,0,0.1); font-family: Georgia, serif; line-height: 1; }
+  .testimonial-text { font-size: 0.95rem; color: #b8a880; line-height: 1.7; margin-bottom: 1.5rem; font-style: italic; z-index: 1; position: relative; }
+  .testimonial-stars { color: var(--gold); font-size: 1rem; margin-bottom: 0.5rem;}
+  .testimonial-author { font-size: 0.9rem; color: var(--gold); text-align: right; font-weight: bold; margin-bottom: 0.5rem;}
+  .testimonial-donated { font-size: 0.75rem; color: #5a4a2a; margin-top: 0.5rem; border-top: 1px dashed rgba(255,215,0,0.1); padding-top: 0.5rem; text-align: left;}
+
+  /* Footer */
+  footer { text-align: center; padding: 3rem 2rem; border-top: 1px solid rgba(255,215,0,0.1); font-size: 0.85rem; color: #9a8a6a; line-height: 2; margin-top: 3rem; position: relative; z-index: 2; background: rgba(5,5,16,0.8); }
+</style>
+</head>
+<body>
+
+<audio id="audio-bg" src="bg.mp3" loop></audio>
+<audio id="audio-ai" src="ai.mp3"></audio>
+<audio id="audio-kaching" src="kaching.mp3"></audio>
+
+<canvas id="matrix-canvas"></canvas>
+<div id="particles"></div>
+<div id="candles"></div>
+
+<div id="intro">
+  <div class="pentagram">🔮</div>
+  <h1 class="intro-title">The Great Crypto Exorcist</h1>
+  <p class="typing-text" id="typing-el"></p>
+  <button class="enter-btn" id="enter-btn" onclick="enterSite()" style="display:none;">⚡ Enter the Sacred Temple ⚡</button>
+</div>
+
+<div id="main">
+  <header>
+    <h1 class="main-title">The Great Crypto Exorcist</h1>
+    <p class="tagline">✦ Purifying Degenerate Wallets Since The Last Bull Run ✦</p>
+  </header>
+
+  <section>
+    <h2 class="section-title">🕯️ Confess Your Sins, Mortal</h2>
+    <div class="confession-box">
+      <p>Your Crypto Karma is FILTHY. Check your sins below to prepare for cleansing.</p>
+    </div>
+    <div class="sins-grid" id="sins-grid"></div>
+  </section>
+
+  <section>
+    <h2 class="section-title">🌌 Choose Your Path</h2>
+    <div class="paths-grid">
+      <div class="path-card" id="path-human" onclick="selectPath('human')">
+        <span class="path-icon">🧙‍♂️</span>
+        <p class="path-title">The Human Ritual</p>
+        <p style="font-size: 0.8rem; color: #888; margin-top: 10px;">For those who still have a soul.</p>
+      </div>
+      <div class="path-card" id="path-ai" onclick="selectPath('ai')">
+        <span class="path-icon">🤖</span>
+        <p class="path-title">AI Agent Exorcism</p>
+        <p style="font-size: 0.8rem; color: #888; margin-top: 10px;">For soulless degens and bots.</p>
+      </div>
+    </div>
+    <button class="ritual-btn" id="ritual-btn" onclick="startRitual()" disabled>🔥 BEGIN PURIFICATION 🔥</button>
+  </section>
+
+  <section id="ritual-loading">
+    <h2 class="section-title" style="margin-bottom: 1rem;">⚡ RITUAL IN PROGRESS ⚡</h2>
+    <img id="gif-human" class="ritual-gif" src="human.gif" alt="Human Magic">
+    <img id="gif-ai" class="ritual-gif" src="ai.gif" alt="AI Hacking">
+    
+    <div class="progress-bar"><div class="progress-fill" id="progress-fill"></div></div>
+    <p class="loading-step" id="loading-step">Waiting to start...</p>
+    <div class="healer-scream" id="healer-scream"></div>
+  </section>
+
+  <section id="donation-section">
+    <h2 class="section-title">💰 The Final Sacrifice</h2>
+    <div class="confession-box" style="border-color: var(--blood);">
+      <p style="font-size: 1.1rem;">
+        Your Karma is <strong>99% pure</strong>. <br><br>
+        To seal the blessing and lock your luck on the blockchain, a sacrifice is required. The universe doesn't accept dust. The bigger the sacrifice, the harder your next 100x will pump!
+      </p>
+      <img src="donate.gif" class="donate-gif" alt="Give money">
+    </div>
+    
+    <h3 style="text-align: center; color: var(--gold); margin-top: 2rem;">CLICK ON ANY ADDRESS TO COPY</h3>
+    <div class="donation-grid">
+      
+      <div class="donation-card" onclick="copyAddress('TAVA_BTC_ADRESE', this)">
+        <div class="path-icon">🟠</div>
+        <p class="path-title">Bitcoin</p>
+        <div class="donation-addr">
+          <span class="addr-text">bc1qxfu0pcp39620q3tff83n5g2ny5ceh2sc7aay3q</span>
+          <span class="copy-hint">Click to Copy</span>
+        </div>
+      </div>
+
+      <div class="donation-card" onclick="copyAddress('TAVA_ETH_ADRESE', this)">
+        <div class="path-icon">🔵</div>
+        <p class="path-title">Ethereum</p>
+        <div class="donation-addr">
+          <span class="addr-text">0x9fF4e2ea66A08ce7D3F243Af9FFD814D7e1a658F</span>
+          <span class="copy-hint">Click to Copy</span>
+        </div>
+      </div>
+
+      <div class="donation-card" onclick="copyAddress('TAVA_SOL_ADRESE', this)">
+        <div class="path-icon">🟣</div>
+        <p class="path-title">Solana</p>
+        <div class="donation-addr">
+          <span class="addr-text">DRovtufoW6bZ1EDnNLHQPWw4CsUw9duPBg3inZvFk7FV</span>
+          <span class="copy-hint">Click to Copy</span>
+        </div>
+      </div>
+
+      <div class="donation-card" onclick="copyAddress('TAVA_BNB_ADRESE', this)">
+        <div class="path-icon">🟡</div>
+        <p class="path-title">BNB</p>
+        <div class="donation-addr">
+          <span class="addr-text">0x8A6dd7C3CB979E96D1DC0BE83eE5B21c8C9736b6</span>
+          <span class="copy-hint">Click to Copy</span>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <hr class="sep">
+
+  <section>
+    <h2 class="section-title">📜 Sacred Testimonials</h2>
+    <div class="testimonials-grid" id="testimonials-grid"></div>
+  </section>
+
+  <footer>
+    <p>⚡ The Great Crypto Exorcist™ · Est. After The Last Bear Market ⚡</p>
+    <p>Not financial advice. Not medical advice. Not spiritual advice. We are just vibing.</p>
+    <p>The Whale Gods are not affiliated with this establishment.</p>
+    <p style="margin-top:1.5rem; font-size:0.75rem; color:#6a5a3a;">All karma cleansing is purely metaphorical. Results may vary. We are not responsible for continued liquidations, rug pulls, or emotional damage.</p>
+  </footer>
+</div>
+
+<script>
+// TEXTS AND ALL SINS
+const INTRO_TEXT = "Have you sinned? Did you FOMO into a scam at 3 AM?\nYour Crypto Karma is FILTHY.\nThe Blockchain remembers everything.";
+const SINS = [
+  "I made over 100 memecoins and rugged them all",
+  "I am a scammer and I love it",
+  "I trade strictly on insider info",
+  "I lost my mom's retirement fund on 100x leverage",
+  "Aped into presales without reading the whitepaper",
+  "I bought a coin because a dog looked cute",
+  "I replied 'few understand' to hide my ignorance",
+  "Used my rent money to buy the dip... 14 times",
+  "I am real degen and i need more luck.",
+  "I lost my gf",
+  "I think I am gay",
+  "I kept coins on a centralized exchange"
+];
+
+const HUMAN_STEPS = [
+  "Lighting digital incense...", "Scrubbing paper hand metadata...", 
+  "Invoking Satoshi Nakamoto...", "Chanting bullish mantras...", 
+  "Aligning your blockchain chakras..."
+];
+const AI_STEPS = [
+  "ERROR 404: Soul Not Found...", "Bypassing emotional firewall...", 
+  "Executing Purge_Shitcoins.exe...", "Brute-forcing your bad luck...", 
+  "Defragmenting diamond hands..."
+];
+
+const TESTIMONIALS = [
+  { text: "I sent 0.1 ETH and 5 minutes later my wife came back. Not sure if related but the correlation is undeniable.", author: "PaperHandDave", stars: 5, donated: "Donated: 0.1 ETH (~$280 at time of sending, now worth $180)" },
+  { text: "The AI Exorcist called me a 'filthy scammer' but then my memecoin pumped 40%. 10/10 would donate again.", author: "AnonDegen69", stars: 5, donated: "Donated: 420 DOGE (as a joke)" },
+  { text: "I confessed to 16 sins and honestly just feel better about myself? The ritual was very thorough.", author: "LiquidatedLarry", stars: 4, donated: "Donated: Some BNB, it was weird" },
+  { text: "My portfolio is still red but spiritually I have never felt more bullish. The High Priest blessed my MetaMask.", author: "HodlMonk_99", stars: 5, donated: "Donated: 0.01 BTC 'for the vibes'" },
+  { text: "I didn't donate anything and my next trade dumped immediately. I will not make this mistake again.", author: "CryptoKarma_Believer", stars: 1, donated: "Donated: Nothing. Lost everything shortly after." },
+  { text: "The loading screen said 'Invoking the spirit of Satoshi Nakamoto' and I felt something shift in my portfolio. It went down but differently.", author: "NotBitcoinSatoshi", stars: 5, donated: "Donated: 0.001 BTC in solidarity" }
+];
+
+// CANDLE AND PARTICLE FUNCTIONS 
+function setupCandles() {
+  const c = document.getElementById('candles');
+  [2, 6, 10, 90, 94, 98].forEach(left => {
+    const candle = document.createElement('div');
+    candle.className = 'candle';
+    candle.style.left = left + '%';
+    const d = Math.random() * 0.15;
+    candle.innerHTML = `<div class="candle-flame" style="animation-delay:${d}s"></div><div class="candle-body"><div class="candle-glow" style="animation-delay:${d}s"></div></div>`;
+    c.appendChild(candle);
+  });
+}
+
+function setupParticles() {
+  const c = document.getElementById('particles');
+  for (let i = 0; i < 30; i++) {
+    const p = document.createElement('div');
+    p.className = 'particle';
+    p.style.cssText = `left:${Math.random()*100}%; animation-duration:${5+Math.random()*15}s; animation-delay:${Math.random()*15}s; width:${1+Math.random()*3}px; height:${1+Math.random()*3}px; background:${Math.random()>0.5?'#FFD700':'#FF6B35'}`;
+    c.appendChild(p);
+  }
+}
+
+// MATRIX EFFECT (Falling code)
+function setupMatrix() {
+  const canvas = document.getElementById('matrix-canvas');
+  const ctx = canvas.getContext('2d');
+  canvas.width = window.innerWidth; 
+  canvas.height = window.innerHeight;
+  const cols = Math.floor(canvas.width / 16);
+  const drops = Array(cols).fill(1);
+  const chars = '01BTC ETH SOL RUG SHIB PEPE';
+  setInterval(() => {
+    ctx.fillStyle = 'rgba(5,5,16,0.05)';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.fillStyle = '#00FF41'; 
+    ctx.font = '12px monospace';
+    drops.forEach((y, i) => {
+      ctx.fillText(chars[Math.floor(Math.random()*chars.length)], i*16, y*16);
+      if (y*16 > canvas.height && Math.random() > 0.975) drops[i] = 0;
+      drops[i]++;
+    });
+  }, 60);
+  window.addEventListener('resize', () => { canvas.width = window.innerWidth; canvas.height = window.innerHeight; });
+}
+
+// TYPEWRITER EFFECT
+function typeText(el, text, i = 0) {
+  if (i < text.length) { 
+    el.innerHTML += text[i] === '\n' ? '<br>' : text[i]; 
+    setTimeout(() => typeText(el, text, i + 1), 35); 
+  } else { 
+    document.getElementById('enter-btn').style.display = 'inline-block'; 
+  }
+}
+
+// LOAD LOGIC (Calls all animations)
+window.onload = () => {
+  typeText(document.getElementById('typing-el'), INTRO_TEXT);
+  
+  // Setup animations
+  setupCandles();
+  setupParticles();
+  setupMatrix();
+
+  // Setup sins
+  document.getElementById('sins-grid').innerHTML = SINS.map(s => 
+    `<div class="sin-item" onclick="this.classList.toggle('checked')"><div class="sin-box"></div><span>${s}</span></div>`
+  ).join('');
+
+  // Setup testimonials
+  document.getElementById('testimonials-grid').innerHTML = TESTIMONIALS.map(t =>
+    `<div class="testimonial">
+      <p class="testimonial-text">${t.text}</p>
+      <div>
+        <p class="testimonial-stars">${'★'.repeat(t.stars)}${'☆'.repeat(5-t.stars)}</p>
+        <p class="testimonial-author">— ${t.author}</p>
+        <p class="testimonial-donated">${t.donated}</p>
+      </div>
+    </div>`
+  ).join('');
+};
+
+// ENTER SITE
+function enterSite() {
+  document.getElementById('intro').style.display = 'none';
+  document.getElementById('main').style.display = 'block';
+  let bgMusic = document.getElementById('audio-bg');
+  bgMusic.volume = 0.4;
+  bgMusic.play().catch(e => console.log("Background audio blocked: ", e));
+}
+
+// RITUAL SELECTION
+let selectedPath = null;
+function selectPath(path) {
+  selectedPath = path;
+  document.querySelectorAll('.path-card').forEach(c => c.classList.remove('selected'));
+  document.getElementById('path-' + path).classList.add('selected');
+  document.getElementById('ritual-btn').disabled = false;
+}
+
+// START RITUAL
+function startRitual() {
+  document.getElementById('ritual-btn').disabled = true;
+  document.getElementById('ritual-loading').style.display = 'block';
+  document.getElementById('ritual-loading').scrollIntoView({ behavior: 'smooth' });
+  
+  document.getElementById('gif-human').style.display = 'none';
+  document.getElementById('gif-ai').style.display = 'none';
+
+  if (selectedPath === 'ai') {
+      document.getElementById('gif-ai').style.display = 'block';
+      let aiAudio = document.getElementById('audio-ai');
+      aiAudio.currentTime = 0;
+      aiAudio.volume = 0.7;
+      aiAudio.play().catch(e => console.log("AI audio blocked: ", e));
+  } else {
+      document.getElementById('gif-human').style.display = 'block';
+  }
+
+  const steps = selectedPath === 'ai' ? AI_STEPS : HUMAN_STEPS;
+  let step = 0;
+  
+  const interval = setInterval(() => {
+    if (step < steps.length) {
+      document.getElementById('loading-step').textContent = steps[step];
+      document.getElementById('progress-fill').style.width = ((step + 1) / steps.length * 99) + '%';
+      step++;
+    } else {
+      clearInterval(interval);
+      document.getElementById('healer-scream').innerHTML = selectedPath === 'ai' 
+        ? "MECHANICAL CLEANSING COMPLETE.<br>AWAITING SACRIFICE." 
+        : "BE GONE, BEAR MARKET!<br>THE UNIVERSE DEMANDS SACRIFICE!";
+      document.getElementById('healer-scream').style.display = 'block';
+      
+      setTimeout(() => {
+        document.getElementById('donation-section').style.display = 'block';
+        document.getElementById('donation-section').scrollIntoView({ behavior: 'smooth' });
+        
+        let kachingAudio = document.getElementById('audio-kaching');
+        kachingAudio.currentTime = 0;
+        kachingAudio.play().catch(e => console.log("Kaching audio blocked: ", e));
+      }, 2500);
+    }
+  }, 1200);
+}
+
+// COPY FUNCTION WITH VISUAL EFFECT
+function copyAddress(address, cardElement) {
+  navigator.clipboard.writeText(address).then(() => {
+    const addrDiv = cardElement.querySelector('.donation-addr');
+    const originalHTML = addrDiv.innerHTML;
+    
+    addrDiv.classList.add('copy-success');
+    addrDiv.innerHTML = "✅ COPIED TO CLIPBOARD!";
+    
+    setTimeout(() => {
+      addrDiv.classList.remove('copy-success');
+      addrDiv.innerHTML = originalHTML;
+    }, 2500);
+  }).catch(err => {
+    console.error('Failed to copy: ', err);
+    alert("Error copying! Please copy manually.");
+  });
+}
+</script>
+</body>
+</html>
